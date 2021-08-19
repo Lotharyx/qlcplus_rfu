@@ -16,11 +16,13 @@ LIBS += -lqlcplusengine
 HEADERS = \
     rfu.h \
     rfu_actor.h \
+    rfu_advertiser.h \
     rfu_messages.h \
     rfu_socket.h
 SOURCES = \
     rfu.cpp \
     rfu_actor.cpp \
+    rfu_advertiser.cpp \
     rfu_messages.cpp \
     rfu_socket.cpp
 

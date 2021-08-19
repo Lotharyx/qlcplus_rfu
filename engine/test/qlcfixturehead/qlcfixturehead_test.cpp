@@ -29,8 +29,7 @@
 #include "qlcfixturedef.h"
 #undef protected
 
-void QLCFixtureHead_Test::initTestCase()
-{
+void QLCFixtureHead_Test::initTestCase() {
     m_fixtureDef = new QLCFixtureDef();
     QVERIFY(m_fixtureDef != NULL);
 
@@ -51,8 +50,7 @@ void QLCFixtureHead_Test::initTestCase()
     m_fixtureDef->addChannel(m_ch4);
 }
 
-void QLCFixtureHead_Test::load()
-{
+void QLCFixtureHead_Test::load() {
     QBuffer buffer;
     buffer.open(QIODevice::WriteOnly | QIODevice::Text);
     QXmlStreamWriter xmlWriter(&buffer);
@@ -80,8 +78,7 @@ void QLCFixtureHead_Test::load()
     QVERIFY(head.channels().contains(42));
 }
 
-void QLCFixtureHead_Test::save()
-{
+void QLCFixtureHead_Test::save() {
     QLCFixtureHead head;
     head.addChannel(0);
     head.addChannel(1);
@@ -105,17 +102,13 @@ void QLCFixtureHead_Test::save()
     QCOMPARE(xmlReader.name().toString(), QString("Head"));
     int ch = 0;
 
-    while (xmlReader.readNextStartElement())
-    {
-        if (xmlReader.name() == "Channel")
-        {
+    while (xmlReader.readNextStartElement()) {
+        if (xmlReader.name() == "Channel") {
             QString chNum = xmlReader.readElementText();
             QVERIFY(chNum.toInt() == 0 || chNum.toInt() == 1 ||
                     chNum.toInt() == 2 || chNum.toInt() == 3);
             ch++;
-        }
-        else
-        {
+        } else {
             QFAIL(QString("Unexpected tag: %1").arg(xmlReader.name().toString()).toUtf8().constData());
             xmlReader.skipCurrentElement();
         }
@@ -124,8 +117,7 @@ void QLCFixtureHead_Test::save()
     QCOMPARE(ch, 4);
 }
 
-void QLCFixtureHead_Test::channels()
-{
+void QLCFixtureHead_Test::channels() {
     QLCFixtureHead head;
     QCOMPARE(head.channels().size(), 0);
 
@@ -155,8 +147,7 @@ void QLCFixtureHead_Test::channels()
     QCOMPARE(head.channels().size(), 0);
 }
 
-void QLCFixtureHead_Test::cacheChannelsRgbMaster()
-{
+void QLCFixtureHead_Test::cacheChannelsRgbMaster() {
     QLCFixtureMode mode(m_fixtureDef);
     QCOMPARE(mode.channels().size(), 0);
 
@@ -192,8 +183,7 @@ void QLCFixtureHead_Test::cacheChannelsRgbMaster()
     QCOMPARE(head.channelNumber(QLCChannel::Intensity, QLCChannel::MSB), quint32(3));
 }
 
-void QLCFixtureHead_Test::cacheChannelsCmyMaster()
-{
+void QLCFixtureHead_Test::cacheChannelsCmyMaster() {
     QLCFixtureMode mode(m_fixtureDef);
     QCOMPARE(mode.channels().size(), 0);
 
@@ -229,8 +219,7 @@ void QLCFixtureHead_Test::cacheChannelsCmyMaster()
     QCOMPARE(head.channelNumber(QLCChannel::Intensity, QLCChannel::MSB), quint32(2));
 }
 
-void QLCFixtureHead_Test::cacheChannelsPanTilt()
-{
+void QLCFixtureHead_Test::cacheChannelsPanTilt() {
     QLCFixtureMode mode(m_fixtureDef);
     QCOMPARE(mode.channels().size(), 0);
 
@@ -275,8 +264,7 @@ void QLCFixtureHead_Test::cacheChannelsPanTilt()
     QCOMPARE(head.channelNumber(QLCChannel::Intensity, QLCChannel::MSB), QLCChannel::invalid());
 }
 
-void QLCFixtureHead_Test::doublePanTilt()
-{
+void QLCFixtureHead_Test::doublePanTilt() {
     /** Test that a mistake in the fixture definition (LSB channel set to MSB)
      *  will overwrite the correct MSB channel. */
 
@@ -312,8 +300,7 @@ void QLCFixtureHead_Test::doublePanTilt()
     QCOMPARE(head.channelNumber(QLCChannel::Tilt, QLCChannel::LSB), QLCChannel::invalid());
 }
 
-void QLCFixtureHead_Test::cacheChannelsColor()
-{
+void QLCFixtureHead_Test::cacheChannelsColor() {
     QLCFixtureMode mode(m_fixtureDef);
     QCOMPARE(mode.channels().size(), 0);
 
@@ -345,8 +332,7 @@ void QLCFixtureHead_Test::cacheChannelsColor()
     QCOMPARE(head.colorWheels().at(1), quint32(3));
 }
 
-void QLCFixtureHead_Test::cleanupTestCase()
-{
+void QLCFixtureHead_Test::cleanupTestCase() {
     QVERIFY(m_fixtureDef != NULL);
     delete m_fixtureDef;
 }

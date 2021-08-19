@@ -2,6 +2,7 @@
 #include "rfu.h"
 
 static const QChar comma(',');
+static const QChar semicolon(';');
 
 rfu_actor::rfu_actor(QTcpSocket * socket, QObject *parent) : QObject(parent) {
     m_socket = socket;
@@ -16,8 +17,16 @@ rfu_actor::rfu_actor(QTcpSocket * socket, QObject *parent) : QObject(parent) {
 void rfu_actor::onReadyRead() {
     qint64 bytes_available = m_socket->bytesAvailable();
     QString data = QString(m_socket->read(bytes_available)).trimmed();
-    dispatch(data);
+    QStringList commands = data.split(semicolon);
+
+    for(auto & command : commands) {
+        if(command.length() > 0) {
+            // qInfo() << "Dispatching " << command << "...";
+            dispatch(command);
+        }
+    }
 }
+
 
 
 void rfu_actor::dispatch(QString & data) {

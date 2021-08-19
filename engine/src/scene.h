@@ -39,6 +39,7 @@ class QXmlStreamReader;
 
 #define KXMLQLCFixtureValues "FixtureVal"
 #define KXMLQLCSceneChannelGroupsValues "ChannelGroupsVal"
+#define KXMLQLCSceneRFUEnabled "RFUEnabled"
 
 // Legacy: these do not contain ChannelGroups values
 #define KXMLQLCSceneChannelGroups "ChannelGroups"
@@ -52,244 +53,252 @@ class QXmlStreamReader;
  * fading occurs. Otherwise values are always faded from what they currently
  * are, to the target values defined in the scene (with SceneValue instances).
  */
-class Scene : public Function, public DMXSource
-{
-    Q_OBJECT
-    Q_DISABLE_COPY(Scene)
+class Scene : public Function, public DMXSource {
+        Q_OBJECT
+        Q_DISABLE_COPY(Scene)
 
-    /*********************************************************************
-     * Initialization
-     *********************************************************************/
-public:
-    enum SceneAttr
-    {
-        Intensity = Function::Intensity,
-        ParentIntensity
-    };
+        /*********************************************************************
+         * Initialization
+         *********************************************************************/
+    public:
+        enum SceneAttr {
+            Intensity = Function::Intensity,
+            ParentIntensity
+        };
 
-    /**
-     * Construct a new scene function, with given parent object. If the
-     * parent is not a Doc* object, the debug build asserts.
-     *
-     * @param doc The parent object who owns the scene
-     */
-    Scene(Doc* doc);
+        /**
+         * Construct a new scene function, with given parent object. If the
+         * parent is not a Doc* object, the debug build asserts.
+         *
+         * @param doc The parent object who owns the scene
+         */
+        Scene(Doc* doc);
 
-    /**
-     * Destroy the scene
-     */
-    ~Scene();
+        /**
+         * Destroy the scene
+         */
+        ~Scene();
 
-    /** @reimp */
-    QIcon getIcon() const;
+        /** @reimp */
+        QIcon getIcon() const;
 
-    /** @reimp */
-    quint32 totalDuration();
+        /** @reimp */
+        quint32 totalDuration();
 
-private:
-    quint32 m_legacyFadeBus;
+    private:
+        quint32 m_legacyFadeBus;
 
-    /*********************************************************************
-     * Copying
-     *********************************************************************/
-public:
-    /** @reimp */
-    Function* createCopy(Doc* doc, bool addToDoc = true);
+        /*********************************************************************
+         * Copying
+         *********************************************************************/
+    public:
+        /** @reimp */
+        Function* createCopy(Doc* doc, bool addToDoc = true);
 
-    /** @reimp */
-    bool copyFrom(const Function* function);
+        /** @reimp */
+        bool copyFrom(const Function* function);
 
-    /*********************************************************************
-     * Values
-     *********************************************************************/
-public:
-    /**
-     * Set the value of one fixture channel, using a predefined SceneValue
-     */
-    void setValue(const SceneValue& scv, bool blind = false, bool checkHTP = true);
+        /*********************************************************************
+         * Values
+         *********************************************************************/
+    public:
+        /**
+         * Set the value of one fixture channel, using a predefined SceneValue
+         */
+        void setValue(const SceneValue & scv, bool blind = false, bool checkHTP = true);
 
-    /**
-     * Set the value of one fixture channel, specify parameters separately
-     */
-    void setValue(quint32 fxi, quint32 ch, uchar value);
+        /**
+         * Set the value of one fixture channel, specify parameters separately
+         */
+        void setValue(quint32 fxi, quint32 ch, uchar value);
 
-    /**
-     * Clear the value of one fixture channel
-     */
-    void unsetValue(quint32 fxi, quint32 ch);
+        /**
+         * Clear the value of one fixture channel
+         */
+        void unsetValue(quint32 fxi, quint32 ch);
 
-    /**
-     * Get the value of one fixture channel
-     */
-    uchar value(quint32 fxi, quint32 ch);
+        /**
+         * Get the value of one fixture channel
+         */
+        uchar value(quint32 fxi, quint32 ch);
 
-    /**
-     * Verify if the given value belongs to the Scene
-     */
-    bool checkValue(SceneValue val);
+        /**
+         * Verify if the given value belongs to the Scene
+         */
+        bool checkValue(SceneValue val);
 
-    /**
-     * Get a list of values in this scene
-     */
-    QList <SceneValue> values() const;
+        /**
+         * Get a list of values in this scene
+         */
+        QList <SceneValue> values() const;
 
-    /** @reimp */
-    QList<quint32> components();
+        /** @reimp */
+        QList<quint32> components();
 
-    /**
-     * Try to retrieve a RGB/CMY color if the Scene has RGB/CMY channels set.
-     * A fixture ID can be specified to retrieve a single fixture color.
-     * If none, an empty color will be returned.
-     */
-    QColor colorValue(quint32 fxi = Fixture::invalidId());
+        /**
+         * Try to retrieve a RGB/CMY color if the Scene has RGB/CMY channels set.
+         * A fixture ID can be specified to retrieve a single fixture color.
+         * If none, an empty color will be returned.
+         */
+        QColor colorValue(quint32 fxi = Fixture::invalidId());
 
-    /**
-     * Clear all values
-     */
-    void clear();
+        /**
+         * Clear all values
+         */
+        void clear();
 
-signals:
-    void valueChanged(SceneValue scv);
+    signals:
+        void valueChanged(SceneValue scv);
 
-protected:
-    QMap <SceneValue, uchar> m_values;
-    QMutex m_valueListMutex;
+    protected:
+        QMap <SceneValue, uchar> m_values;
+        QMutex m_valueListMutex;
 
-    /*********************************************************************
-     * Channel Groups
-     *********************************************************************/
-public:
-    /**
-     * Associate a channel group to this Scene
-     */
-    void addChannelGroup(quint32 id);
+        /*********************************************************************
+         * Channel Groups
+         *********************************************************************/
+    public:
+        /**
+         * Associate a channel group to this Scene
+         */
+        void addChannelGroup(quint32 id);
 
-    /**
-     * Remove a previously associated channel group from this Scene
-     */
-    void removeChannelGroup(quint32 id);
+        /**
+         * Remove a previously associated channel group from this Scene
+         */
+        void removeChannelGroup(quint32 id);
 
-    /**
-     * Returns the list of Channel Groups associated to this Scene
-     */
-    QList<quint32> channelGroups();
+        /**
+         * Returns the list of Channel Groups associated to this Scene
+         */
+        QList<quint32> channelGroups();
 
-    /**
-     * Set the level of a channel group with the given id
-     */
-    void setChannelGroupLevel(quint32 id, uchar level);
+        /**
+         * Set the level of a channel group with the given id
+         */
+        void setChannelGroupLevel(quint32 id, uchar level);
 
-    /**
-     * Returns the list of Channel Groups levels
-     */
-    QList<uchar> channelGroupsLevels();
+        /**
+         * Returns the list of Channel Groups levels
+         */
+        QList<uchar> channelGroupsLevels();
 
-protected:
-    QList <quint32> m_channelGroups;
-    QList <uchar> m_channelGroupsLevels;
+    protected:
+        QList <quint32> m_channelGroups;
+        QList <uchar> m_channelGroupsLevels;
 
-    /*********************************************************************
-     * Fixtures
-     *********************************************************************/
-public slots:
-    void slotFixtureRemoved(quint32 fxi_id);
+        /*********************************************************************
+         * Fixtures
+         *********************************************************************/
+    public slots:
+        void slotFixtureRemoved(quint32 fxi_id);
 
-public:
-    void addFixture(quint32 fixtureId);
-    bool removeFixture(quint32 fixtureId);
-    QList<quint32> fixtures() const;
+    public:
+        void addFixture(quint32 fixtureId);
+        bool removeFixture(quint32 fixtureId);
+        QList<quint32> fixtures() const;
 
-private:
-    QList<quint32> m_fixtures;
+    private:
+        QList<quint32> m_fixtures;
 
-    /*********************************************************************
-     * Fixture Groups
-     *********************************************************************/
-public:
-    void addFixtureGroup(quint32 id);
-    bool removeFixtureGroup(quint32 id);
-    QList<quint32> fixtureGroups() const;
+        /*********************************************************************
+         * Fixture Groups
+         *********************************************************************/
+    public:
+        void addFixtureGroup(quint32 id);
+        bool removeFixtureGroup(quint32 id);
+        QList<quint32> fixtureGroups() const;
 
-private:
-    QList<quint32> m_fixtureGroups;
+    private:
+        QList<quint32> m_fixtureGroups;
 
-    /*********************************************************************
-     * Palettes
-     *********************************************************************/
-public:
-    void addPalette(quint32 id);
-    bool removePalette(quint32 id);
-    QList<quint32> palettes() const;
+        /*********************************************************************
+         * Palettes
+         *********************************************************************/
+    public:
+        void addPalette(quint32 id);
+        bool removePalette(quint32 id);
+        QList<quint32> palettes() const;
 
-private:
-    QList<quint32> m_palettes;
+    private:
+        QList<quint32> m_palettes;
 
-    /*********************************************************************
-     * Load & Save
-     *********************************************************************/
-public:
-    /** @reimp */
-    bool saveXML(QXmlStreamWriter *doc);
+        /*********************************************************************
+         * Load & Save
+         *********************************************************************/
+    public:
+        /** @reimp */
+        bool saveXML(QXmlStreamWriter *doc);
 
-    /** @reimp */
-    bool loadXML(QXmlStreamReader &root);
+        /** @reimp */
+        bool loadXML(QXmlStreamReader & root);
 
-    /** @reimp */
-    void postLoad();
+        /** @reimp */
+        void postLoad();
 
-private:
-    static bool saveXMLFixtureValues(QXmlStreamWriter* doc, quint32 fixtureID, QStringList const& values);
+    private:
+        static bool saveXMLFixtureValues(QXmlStreamWriter* doc, quint32 fixtureID, QStringList const & values);
 
-    /*********************************************************************
-     * Flash
-     *********************************************************************/
-public:
-    /** @reimp */
-    void flash(MasterTimer *timer);
+        /*********************************************************************
+         * Flash
+         *********************************************************************/
+    public:
+        /** @reimp */
+        void flash(MasterTimer *timer);
 
-    /** @reimp */
-    void unFlash(MasterTimer *timer);
+        /** @reimp */
+        void unFlash(MasterTimer *timer);
 
-    /** @reimp from DMXSource */
-    void writeDMX(MasterTimer *timer, QList<Universe*> ua);
+        /** @reimp from DMXSource */
+        void writeDMX(MasterTimer *timer, QList<Universe*> ua);
 
-    /*********************************************************************
-     * Running
-     *********************************************************************/
-public:
-    /** @reimp */
-    void write(MasterTimer *timer, QList<Universe*> ua);
+        /*********************************************************************
+         * Running
+         *********************************************************************/
+    public:
+        /** @reimp */
+        void write(MasterTimer *timer, QList<Universe*> ua);
 
-    /** @reimp */
-    void postRun(MasterTimer *timer, QList<Universe*> ua);
+        /** @reimp */
+        void postRun(MasterTimer *timer, QList<Universe*> ua);
 
-private:
-    /** Internal helper method to abtract Scene value processing */
-    void processValue(MasterTimer *timer, QList<Universe*> ua, uint fadeIn, SceneValue &scv);
+    private:
+        /** Internal helper method to abtract Scene value processing */
+        void processValue(MasterTimer *timer, QList<Universe*> ua, uint fadeIn, SceneValue & scv);
 
-    /*********************************************************************
-     * Attributes
-     *********************************************************************/
-public:
-    /** @reimp */
-    int adjustAttribute(qreal fraction, int attributeId);
+        /*********************************************************************
+         * Attributes
+         *********************************************************************/
+    public:
+        /** @reimp */
+        int adjustAttribute(qreal fraction, int attributeId);
 
-    /*************************************************************************
-     * Blending
-     *************************************************************************/
-public:
-    /** @reimp */
-    void setBlendMode(Universe::BlendMode mode);
+        /*************************************************************************
+         * Blending
+         *************************************************************************/
+    public:
+        /** @reimp */
+        void setBlendMode(Universe::BlendMode mode);
 
-    /** Get/Set the ID of a Function to blend from.
-     *  When preparing the faders of this Scene,
-     *  blend function ID will be taken into account
-     *  to blend channels from a value to another */
-    quint32 blendFunctionID() const;
-    void setBlendFunctionID(quint32 fid);
+        /** Get/Set the ID of a Function to blend from.
+         *  When preparing the faders of this Scene,
+         *  blend function ID will be taken into account
+         *  to blend channels from a value to another */
+        quint32 blendFunctionID() const;
+        void setBlendFunctionID(quint32 fid);
 
-protected:
-    quint32 m_blendFunctionID;
+    protected:
+        quint32 m_blendFunctionID;
+
+
+        /*************************************************************************
+         * RFU
+         *************************************************************************/
+    public:
+        bool isRFUEnabled();
+        void setRFUEnabled(bool value);
+    protected:
+        bool m_RFUEnabled;
 };
 
 /** @} */

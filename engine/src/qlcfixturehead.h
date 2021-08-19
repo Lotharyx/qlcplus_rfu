@@ -35,113 +35,118 @@ class QXmlStreamWriter;
 #define KXMLQLCFixtureHead          "Head"
 #define KXMLQLCFixtureHeadChannel   "Channel"
 
-class QLCFixtureHead
-{
-public:
-    QLCFixtureHead();
-    QLCFixtureHead(const QLCFixtureHead& head);
-    virtual ~QLCFixtureHead();
+class QLCFixtureHead {
+    public:
+        QLCFixtureHead();
+        QLCFixtureHead(const QLCFixtureHead & head);
+        virtual ~QLCFixtureHead();
 
-    QLCFixtureHead& operator=(const QLCFixtureHead& head);
+        QLCFixtureHead & operator=(const QLCFixtureHead & head);
 
-    /************************************************************************
-     * Channels
-     ************************************************************************/
-public:
-    /**
-     * Add a channel to a Fixture Head. The channel must exist in the
-     * Fixture Mode that owns the head. A channel number can exist only once
-     * per head.
-     *
-     * @param channel The channel number to add
-     */
-    void addChannel(quint32 channel);
+        /************************************************************************
+         * Channels
+         ************************************************************************/
+    public:
+        /**
+         * Add a channel to a Fixture Head. The channel must exist in the
+         * Fixture Mode that owns the head. A channel number can exist only once
+         * per head.
+         *
+         * @param channel The channel number to add
+         */
+        void addChannel(quint32 channel);
 
-    /**
-     * Remove a channel from a Fixture Head.
-     *
-     * @param channel The channel number to remove
-     */
-    void removeChannel(quint32 channel);
+        /**
+         * Remove a channel from a Fixture Head.
+         *
+         * @param channel The channel number to remove
+         */
+        void removeChannel(quint32 channel);
 
-    /** Get all channels used by the head */
-    QList <quint32> channels() const;
+        /** Get all channels used by the head */
+        QList <quint32> channels() const;
 
-private:
-    QList <quint32> m_channels;
+    private:
+        QList <quint32> m_channels;
 
-    /************************************************************************
-     * Cached channels
-     ************************************************************************/
-public:
-    /**
-     * Get the channel number for the specified channel $type and $controlByte
-     * @return The channel number or QLCChannel::invalid() if not applicable.
-     */
-    quint32 channelNumber(int type, int controlByte) const;
+        /************************************************************************
+         * Cached channels
+         ************************************************************************/
+    public:
+        /**
+         * Get the channel number for the specified channel $type and $controlByte
+         * @return The channel number or QLCChannel::invalid() if not applicable.
+         */
+        quint32 channelNumber(int type, int controlByte) const;
 
-    /**
-     * Get a list of RGB channels. If the fixture doesn't support RGB mixing,
-     * the list is empty. The first item is always red, then green, then blue.
-     * @return A list of three channels or an empty list
-     */
-    QVector <quint32> rgbChannels() const;
+        /**
+         * Get a list of RGB channels. If the fixture doesn't support RGB mixing,
+         * the list is empty. The first item is always red, then green, then blue.
+         * @return A list of three channels or an empty list
+         */
+        QVector <quint32> rgbChannels() const;
 
-    /**
-     * Return a copy of the cached channel map
-     */
-    QMap<int, quint32> channelsMap() const;
+        /**
+         * Return a copy of the cached channel map
+         */
+        QMap<int, quint32> channelsMap() const;
 
-    /**
-     * Get a list of CMY channels. If the fixture doesn't support CMY mixing,
-     * the list is empty. The first item is always cyan, then magenta, then yellow.
-     * @return A list of three channels or an empty list
-     */
-    QVector <quint32> cmyChannels() const;
+        /**
+         * Get a list of CMY channels. If the fixture doesn't support CMY mixing,
+         * the list is empty. The first item is always cyan, then magenta, then yellow.
+         * @return A list of three channels or an empty list
+         */
+        QVector <quint32> cmyChannels() const;
 
-    /**
-     * Get a list of color wheel channels. Channels are ordered by their number
-     * @return A list of zero or more channels
-     */
-    QVector <quint32> colorWheels() const;
+        /**
+         * Get a list of color wheel channels. Channels are ordered by their number
+         * @return A list of zero or more channels
+         */
+        QVector <quint32> colorWheels() const;
 
-    /**
-     * Get a list of shutter channels. Channels are ordered by their number
-     * @return A list of zero or more channels
-     */
-    QVector <quint32> shutterChannels() const;
+        /**
+         * Get a list of shutter channels. Channels are ordered by their number
+         * @return A list of zero or more channels
+         */
+        QVector <quint32> shutterChannels() const;
 
-    /** Find some interesting channels from $mode and store their indices. */
-    void cacheChannels(const QLCFixtureMode* mode);
+        /** Find some interesting channels from $mode and store their indices.
+         *  @param pt_search if true and head has no pan/tilt, search the containing
+         *  mode to find them
+         */
+        void cacheChannels(const QLCFixtureMode* mode, bool pt_search);
+        void cacheChannels(const QLCFixtureMode * mode) {
+            cacheChannels(mode, true);
+        }
 
-private:
-    void setMapIndex(int chType, int controlByte,  quint32 index);
+    private:
+        void setMapIndex(int chType, int controlByte,  quint32 index);
 
-protected:
-    /** Indicates, whether cacheChannels() has already been called */
-    bool m_channelsCached;
+    protected:
+        /** Indicates, whether cacheChannels() has already been called */
+        bool m_channelsCached;
 
-    /** A map of the cached channel indices, organized as follows:
-     *  <int> channel type: @see QLCChannel::Group and QLCChannel::PrimaryColour
-     *  <quint32> channel MSB index << 16 | channel LSB index
-     */
-    QMap<int, quint32> m_channelsMap;
+        /** A map of the cached channel indices, organized as follows:
+         *  <int> channel type: @see QLCChannel::Group and QLCChannel::PrimaryColour
+         *  <quint32> channel MSB index << 16 | channel LSB index
+         */
+        QMap<int, quint32> m_channelsMap;
 
-    /** The color wheel channels */
-    QVector <quint32> m_colorWheels;
+        /** The color wheel channels */
+        QVector <quint32> m_colorWheels;
 
-    /** The shutter channels */
-    QVector <quint32> m_shutterChannels;
+        /** The shutter channels */
+        QVector <quint32> m_shutterChannels;
 
-    /************************************************************************
-     * Load & Save
-     ************************************************************************/
-public:
-    /** Load a Fixture Head from an XML tag */
-    bool loadXML(QXmlStreamReader &doc);
+        /************************************************************************
+         * Load & Save
+         ************************************************************************/
+    public:
+        /** Load a Fixture Head from an XML tag */
+        bool loadXML(QXmlStreamReader & doc);
 
-    /** Save a Fixture Head to an XML $doc */
-    bool saveXML(QXmlStreamWriter *doc) const;
+        /** Save a Fixture Head to an XML $doc */
+        bool saveXML(QXmlStreamWriter *doc) const;
 };
 
 /** @} */

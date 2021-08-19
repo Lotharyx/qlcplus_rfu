@@ -46,6 +46,8 @@
 #include "app.h"
 #include "doc.h"
 
+#include "rfu.h"
+
 /* Use this namespace for command-line arguments so that we don't pollute
    the global namespace. */
 namespace QLCArgs
@@ -396,6 +398,9 @@ int main(int argc, char** argv)
         QObject::connect(webAccess, SIGNAL(storeAutostartProject(QString)),
                 &app, SLOT(slotSaveAutostart(QString)));
     }
+
+    // Start the RFU agent
+    rfu::run(app.doc());
 
     return qapp.exec();
 }

@@ -3,6 +3,7 @@ include(variables.pri)
 TEMPLATE = subdirs
 
 SUBDIRS        += hotplugmonitor
+SUBDIRS        += rfu
 SUBDIRS        += engine
 
 qmlui: {

@@ -44,22 +44,19 @@ Scene::Scene(Doc* doc)
     : Function(doc, Function::SceneType)
     , m_legacyFadeBus(Bus::invalid())
     , m_blendFunctionID(Function::invalidId())
-{
+    , m_RFUEnabled(false) {
     setName(tr("New Scene"));
     registerAttribute(tr("ParentIntensity"), Multiply | Single);
 }
 
-Scene::~Scene()
-{
+Scene::~Scene() {
 }
 
-QIcon Scene::getIcon() const
-{
+QIcon Scene::getIcon() const {
     return QIcon(":/scene.png");
 }
 
-quint32 Scene::totalDuration()
-{
+quint32 Scene::totalDuration() {
     return (quint32)duration();
 }
 
@@ -67,18 +64,17 @@ quint32 Scene::totalDuration()
  * Copying
  *****************************************************************************/
 
-Function* Scene::createCopy(Doc* doc, bool addToDoc)
-{
+Function* Scene::createCopy(Doc* doc, bool addToDoc) {
     Q_ASSERT(doc != NULL);
 
     Function* copy = new Scene(doc);
-    if (copy->copyFrom(this) == false)
-    {
+
+    if (copy->copyFrom(this) == false) {
         delete copy;
         copy = NULL;
     }
-    if (addToDoc == true && doc->addFunction(copy) == false)
-    {
+
+    if (addToDoc == true && doc->addFunction(copy) == false) {
         delete copy;
         copy = NULL;
     }
@@ -86,9 +82,9 @@ Function* Scene::createCopy(Doc* doc, bool addToDoc)
     return copy;
 }
 
-bool Scene::copyFrom(const Function* function)
-{
+bool Scene::copyFrom(const Function* function) {
     const Scene* scene = qobject_cast<const Scene*> (function);
+
     if (scene == NULL)
         return false;
 
@@ -104,6 +100,7 @@ bool Scene::copyFrom(const Function* function)
     m_fixtureGroups = scene->m_fixtureGroups;
     m_palettes.clear();
     m_palettes = scene->m_palettes;
+    m_RFUEnabled = scene->m_RFUEnabled;
 
     return Function::copyFrom(function);
 }
@@ -112,12 +109,10 @@ bool Scene::copyFrom(const Function* function)
  * Values
  *****************************************************************************/
 
-void Scene::setValue(const SceneValue& scv, bool blind, bool checkHTP)
-{
+void Scene::setValue(const SceneValue & scv, bool blind, bool checkHTP) {
     bool valChanged = false;
 
-    if (!m_fixtures.contains(scv.fxi))
-    {
+    if (!m_fixtures.contains(scv.fxi)) {
         qWarning() << Q_FUNC_INFO << "Setting value for unknown fixture" << scv.fxi << ". Adding it.";
         m_fixtures.append(scv.fxi);
     }
@@ -126,25 +121,22 @@ void Scene::setValue(const SceneValue& scv, bool blind, bool checkHTP)
         QMutexLocker locker(&m_valueListMutex);
 
         QMap<SceneValue, uchar>::iterator it = m_values.find(scv);
-        if (it == m_values.end())
-        {
+
+        if (it == m_values.end()) {
             m_values.insert(scv, scv.value);
             valChanged = true;
-        }
-        else if (it.value() != scv.value)
-        {
-            const_cast<uchar&>(it.key().value) = scv.value;
+        } else if (it.value() != scv.value) {
+            const_cast<uchar &>(it.key().value) = scv.value;
             it.value() = scv.value;
             valChanged = true;
         }
 
         // if the scene is running, we must
         // update/add the changed channel
-        if (blind == false && m_fadersMap.isEmpty() == false)
-        {
+        if (blind == false && m_fadersMap.isEmpty() == false) {
             Fixture *fixture = doc()->fixture(scv.fxi);
-            if (fixture != NULL)
-            {
+
+            if (fixture != NULL) {
                 quint32 universe = fixture->universe();
 
                 FadeChannel fc(doc(), scv.fxi, scv.channel);
@@ -153,29 +145,27 @@ void Scene::setValue(const SceneValue& scv, bool blind, bool checkHTP)
                 fc.setCurrent(scv.value);
                 fc.setFadeTime(0);
 
-                if (m_fadersMap.contains(universe))
-                {
+                if (m_fadersMap.contains(universe)) {
                     if (checkHTP == false)
                         m_fadersMap[universe]->replace(fc);
                     else
                         m_fadersMap[universe]->add(fc);
                 }
             }
-         }
+        }
     }
 
     emit changed(this->id());
+
     if (valChanged)
         emit valueChanged(scv);
 }
 
-void Scene::setValue(quint32 fxi, quint32 ch, uchar value)
-{
+void Scene::setValue(quint32 fxi, quint32 ch, uchar value) {
     setValue(SceneValue(fxi, ch, value));
 }
 
-void Scene::unsetValue(quint32 fxi, quint32 ch)
-{
+void Scene::unsetValue(quint32 fxi, quint32 ch) {
     if (!m_fixtures.contains(fxi))
         qWarning() << Q_FUNC_INFO << "Unsetting value for unknown fixture" << fxi;
 
@@ -187,27 +177,22 @@ void Scene::unsetValue(quint32 fxi, quint32 ch)
     emit changed(this->id());
 }
 
-uchar Scene::value(quint32 fxi, quint32 ch)
-{
+uchar Scene::value(quint32 fxi, quint32 ch) {
     return m_values.value(SceneValue(fxi, ch, 0), 0);
 }
 
-bool Scene::checkValue(SceneValue val)
-{
+bool Scene::checkValue(SceneValue val) {
     return m_values.contains(val);
 }
 
-QList <SceneValue> Scene::values() const
-{
+QList <SceneValue> Scene::values() const {
     return m_values.keys();
 }
 
-QList<quint32> Scene::components()
-{
+QList<quint32> Scene::components() {
     QList<quint32> ids;
 
-    foreach(SceneValue scv, m_values.keys())
-    {
+    foreach(SceneValue scv, m_values.keys()) {
         if (ids.contains(scv.fxi) == false)
             ids.append(scv.fxi);
     }
@@ -215,48 +200,71 @@ QList<quint32> Scene::components()
     return ids;
 }
 
-QColor Scene::colorValue(quint32 fxi)
-{
+QColor Scene::colorValue(quint32 fxi) {
     int rVal = 0, gVal = 0, bVal = 0;
     int cVal = -1, mVal = -1, yVal = -1;
     bool found = false;
     QColor CMYcol;
 
-    foreach(SceneValue scv, m_values.keys())
-    {
+    foreach(SceneValue scv, m_values.keys()) {
         if (fxi != Fixture::invalidId() && fxi != scv.fxi)
             continue;
 
         Fixture *fixture = doc()->fixture(scv.fxi);
+
         if (fixture == NULL)
             continue;
 
         const QLCChannel* channel = fixture->channel(scv.channel);
+
         if (channel == NULL)
             continue;
 
-        if (channel->group() == QLCChannel::Intensity)
-        {
+        if (channel->group() == QLCChannel::Intensity) {
             QLCChannel::PrimaryColour col = channel->colour();
-            switch (col)
-            {
-                case QLCChannel::Red: rVal = scv.value; found = true; break;
-                case QLCChannel::Green: gVal = scv.value; found = true; break;
-                case QLCChannel::Blue: bVal = scv.value; found = true; break;
-                case QLCChannel::Cyan: cVal = scv.value; break;
-                case QLCChannel::Magenta: mVal = scv.value; break;
-                case QLCChannel::Yellow: yVal = scv.value; break;
-                case QLCChannel::White: rVal = gVal = bVal = scv.value; found = true; break;
-                default: break;
+
+            switch (col) {
+                case QLCChannel::Red:
+                    rVal = scv.value;
+                    found = true;
+                    break;
+
+                case QLCChannel::Green:
+                    gVal = scv.value;
+                    found = true;
+                    break;
+
+                case QLCChannel::Blue:
+                    bVal = scv.value;
+                    found = true;
+                    break;
+
+                case QLCChannel::Cyan:
+                    cVal = scv.value;
+                    break;
+
+                case QLCChannel::Magenta:
+                    mVal = scv.value;
+                    break;
+
+                case QLCChannel::Yellow:
+                    yVal = scv.value;
+                    break;
+
+                case QLCChannel::White:
+                    rVal = gVal = bVal = scv.value;
+                    found = true;
+                    break;
+
+                default:
+                    break;
             }
-        }
-        else if (channel->group() == QLCChannel::Colour)
-        {
+        } else if (channel->group() == QLCChannel::Colour) {
             QLCCapability *cap = channel->searchCapability(scv.value);
+
             if (cap &&
-                (cap->presetType() == QLCCapability::SingleColor ||
-                 cap->presetType() == QLCCapability::DoubleColor))
-            {
+                    (cap->presetType() == QLCCapability::SingleColor ||
+                     cap->presetType() == QLCCapability::DoubleColor)) {
                 QColor col = cap->resource(0).value<QColor>();
                 rVal = col.red();
                 gVal = col.green();
@@ -265,8 +273,7 @@ QColor Scene::colorValue(quint32 fxi)
             }
         }
 
-        if (cVal >= 0 && mVal >= 0 && yVal >= 0)
-        {
+        if (cVal >= 0 && mVal >= 0 && yVal >= 0) {
             CMYcol.setCmyk(cVal, mVal, yVal, 0);
             rVal = CMYcol.red();
             gVal = CMYcol.green();
@@ -281,8 +288,7 @@ QColor Scene::colorValue(quint32 fxi)
     return QColor();
 }
 
-void Scene::clear()
-{
+void Scene::clear() {
     m_values.clear();
     m_fixtures.clear();
     m_fixtureGroups.clear();
@@ -293,39 +299,34 @@ void Scene::clear()
  * Channel Groups
  *********************************************************************/
 
-void Scene::addChannelGroup(quint32 id)
-{
-    if (m_channelGroups.contains(id) == false)
-    {
+void Scene::addChannelGroup(quint32 id) {
+    if (m_channelGroups.contains(id) == false) {
         m_channelGroups.append(id);
         m_channelGroupsLevels.append(0);
     }
 }
 
-void Scene::removeChannelGroup(quint32 id)
-{
+void Scene::removeChannelGroup(quint32 id) {
     int idx = m_channelGroups.indexOf(id);
-    if (idx != -1)
-    {
+
+    if (idx != -1) {
         m_channelGroups.removeAt(idx);
         m_channelGroupsLevels.removeAt(idx);
     }
 }
 
-void Scene::setChannelGroupLevel(quint32 id, uchar level)
-{
+void Scene::setChannelGroupLevel(quint32 id, uchar level) {
     int idx = m_channelGroups.indexOf(id);
+
     if (idx >= 0 && idx < m_channelGroupsLevels.count())
         m_channelGroupsLevels[idx] = level;
 }
 
-QList<uchar> Scene::channelGroupsLevels()
-{
+QList<uchar> Scene::channelGroupsLevels() {
     return m_channelGroupsLevels;
 }
 
-QList<quint32> Scene::channelGroups()
-{
+QList<quint32> Scene::channelGroups() {
     return m_channelGroups;
 }
 
@@ -333,16 +334,15 @@ QList<quint32> Scene::channelGroups()
  * Fixtures
  *****************************************************************************/
 
-void Scene::slotFixtureRemoved(quint32 fxi_id)
-{
+void Scene::slotFixtureRemoved(quint32 fxi_id) {
     bool hasChanged = false;
 
     QMutableMapIterator <SceneValue, uchar> it(m_values);
-    while (it.hasNext() == true)
-    {
+
+    while (it.hasNext() == true) {
         SceneValue value(it.next().key());
-        if (value.fxi == fxi_id)
-        {
+
+        if (value.fxi == fxi_id) {
             it.remove();
             hasChanged = true;
         }
@@ -355,19 +355,16 @@ void Scene::slotFixtureRemoved(quint32 fxi_id)
         emit changed(this->id());
 }
 
-void Scene::addFixture(quint32 fixtureId)
-{
+void Scene::addFixture(quint32 fixtureId) {
     if (m_fixtures.contains(fixtureId) == false)
         m_fixtures.append(fixtureId);
 }
 
-bool Scene::removeFixture(quint32 fixtureId)
-{
+bool Scene::removeFixture(quint32 fixtureId) {
     return m_fixtures.removeOne(fixtureId);
 }
 
-QList<quint32> Scene::fixtures() const
-{
+QList<quint32> Scene::fixtures() const {
     return m_fixtures;
 }
 
@@ -375,19 +372,16 @@ QList<quint32> Scene::fixtures() const
  * Fixture Groups
  *********************************************************************/
 
-void Scene::addFixtureGroup(quint32 id)
-{
+void Scene::addFixtureGroup(quint32 id) {
     if (m_fixtureGroups.contains(id) == false)
         m_fixtureGroups.append(id);
 }
 
-bool Scene::removeFixtureGroup(quint32 id)
-{
+bool Scene::removeFixtureGroup(quint32 id) {
     return m_fixtureGroups.removeOne(id);
 }
 
-QList<quint32> Scene::fixtureGroups() const
-{
+QList<quint32> Scene::fixtureGroups() const {
     return m_fixtureGroups;
 }
 
@@ -395,19 +389,16 @@ QList<quint32> Scene::fixtureGroups() const
  * Palettes
  *********************************************************************/
 
-void Scene::addPalette(quint32 id)
-{
+void Scene::addPalette(quint32 id) {
     if (m_palettes.contains(id) == false)
         m_palettes.append(id);
 }
 
-bool Scene::removePalette(quint32 id)
-{
+bool Scene::removePalette(quint32 id) {
     return m_palettes.removeOne(id);
 }
 
-QList<quint32> Scene::palettes() const
-{
+QList<quint32> Scene::palettes() const {
     return m_palettes;
 }
 
@@ -415,8 +406,7 @@ QList<quint32> Scene::palettes() const
  * Load & Save
  *****************************************************************************/
 
-bool Scene::saveXML(QXmlStreamWriter *doc)
-{
+bool Scene::saveXML(QXmlStreamWriter *doc) {
     Q_ASSERT(doc != NULL);
 
     /* Function tag */
@@ -428,18 +418,22 @@ bool Scene::saveXML(QXmlStreamWriter *doc)
     /* Speed */
     saveXMLSpeed(doc);
 
+    /* RFU Enabled */
+    doc->writeTextElement(KXMLQLCSceneRFUEnabled, m_RFUEnabled ? "true" : "false");
+
     /* Channel groups */
-    if (m_channelGroups.count() > 0)
-    {
+    if (m_channelGroups.count() > 0) {
         QString chanGroupsIDs;
-        for (int i = 0; i < m_channelGroups.size(); ++i)
-        {
+
+        for (int i = 0; i < m_channelGroups.size(); ++i) {
             if (chanGroupsIDs.isEmpty() == false)
                 chanGroupsIDs.append(QString(","));
+
             int id = m_channelGroups.at(i);
             int val = m_channelGroupsLevels.at(i);
             chanGroupsIDs.append(QString("%1,%2").arg(id).arg(val));
         }
+
         doc->writeTextElement(KXMLQLCSceneChannelGroupsValues, chanGroupsIDs);
     }
 
@@ -448,17 +442,15 @@ bool Scene::saveXML(QXmlStreamWriter *doc)
     QList<SceneValue> values = m_values.keys();
 
     // loop through the Scene Fixtures in the order they've been added
-    foreach (quint32 fxId, m_fixtures)
-    {
+    foreach (quint32 fxId, m_fixtures) {
         QStringList currFixValues;
         bool found = false;
 
         // look for the values that match the current Fixture ID
-        for (int j = 0; j < values.count(); j++)
-        {
+        for (int j = 0; j < values.count(); j++) {
             SceneValue scv = values.at(j);
-            if (scv.fxi != fxId)
-            {
+
+            if (scv.fxi != fxId) {
                 if (found == true)
                     break;
                 else
@@ -478,16 +470,14 @@ bool Scene::saveXML(QXmlStreamWriter *doc)
     }
 
     /* Save referenced Fixture Groups */
-    foreach (quint32 groupId, m_fixtureGroups)
-    {
+    foreach (quint32 groupId, m_fixtureGroups) {
         doc->writeStartElement(KXMLQLCFixtureGroup);
         doc->writeAttribute(KXMLQLCFixtureGroupID, QString::number(groupId));
         doc->writeEndElement();
     }
 
     /* Save referenced Palettes */
-    foreach (quint32 pId, m_palettes)
-    {
+    foreach (quint32 pId, m_palettes) {
         doc->writeStartElement(KXMLQLCPalette);
         doc->writeAttribute(KXMLQLCPaletteID, QString::number(pId));
         doc->writeEndElement();
@@ -499,86 +489,77 @@ bool Scene::saveXML(QXmlStreamWriter *doc)
     return true;
 }
 
-bool Scene::saveXMLFixtureValues(QXmlStreamWriter* doc, quint32 fixtureID, QStringList const& values)
-{
+bool Scene::saveXMLFixtureValues(QXmlStreamWriter* doc, quint32 fixtureID, QStringList const & values) {
     doc->writeStartElement(KXMLQLCFixtureValues);
     doc->writeAttribute(KXMLQLCFixtureID, QString::number(fixtureID));
+
     if (values.size() > 0)
         doc->writeCharacters(values.join(","));
+
     doc->writeEndElement();
     return true;
 }
 
-bool Scene::loadXML(QXmlStreamReader &root)
-{
-    if (root.name() != KXMLQLCFunction)
-    {
+bool Scene::loadXML(QXmlStreamReader & root) {
+    if (root.name() != KXMLQLCFunction) {
         qWarning() << Q_FUNC_INFO << "Function node not found";
         return false;
     }
 
-    if (root.attributes().value(KXMLQLCFunctionType).toString() != typeToString(Function::SceneType))
-    {
+    if (root.attributes().value(KXMLQLCFunctionType).toString() != typeToString(Function::SceneType)) {
         qWarning() << Q_FUNC_INFO << "Function is not a scene";
         return false;
     }
 
     /* Load scene contents */
-    while (root.readNextStartElement())
-    {
-        if (root.name() == KXMLQLCBus)
-        {
+    while (root.readNextStartElement()) {
+        if(root.name() == KXMLQLCSceneRFUEnabled) {
+            m_RFUEnabled = (root.readElementText() == "true");
+        } else if (root.name() == KXMLQLCBus) {
             m_legacyFadeBus = root.readElementText().toUInt();
-        }
-        else if (root.name() == KXMLQLCFunctionSpeed)
-        {
+        } else if (root.name() == KXMLQLCFunctionSpeed) {
             loadXMLSpeed(root);
-        }
-        else if (root.name() == KXMLQLCSceneChannelGroups)
-        {
+        } else if (root.name() == KXMLQLCSceneChannelGroups) {
             QString chGrpIDs = root.readElementText();
-            if (chGrpIDs.isEmpty() == false)
-            {
+
+            if (chGrpIDs.isEmpty() == false) {
                 QStringList grpArray = chGrpIDs.split(",");
-                foreach(QString grp, grpArray)
-                {
+
+                foreach(QString grp, grpArray) {
                     m_channelGroups.append(grp.toUInt());
                     m_channelGroupsLevels.append(0);
                 }
             }
-        }
-        else if (root.name() == KXMLQLCSceneChannelGroupsValues)
-        {
+        } else if (root.name() == KXMLQLCSceneChannelGroupsValues) {
             QString chGrpIDs = root.readElementText();
-            if (chGrpIDs.isEmpty() == false)
-            {
+
+            if (chGrpIDs.isEmpty() == false) {
                 QStringList grpArray = chGrpIDs.split(",");
-                for (int i = 0; i + 1 < grpArray.count(); i+=2)
-                {
+
+                for (int i = 0; i + 1 < grpArray.count(); i += 2) {
                     m_channelGroups.append(grpArray.at(i).toUInt());
                     m_channelGroupsLevels.append(grpArray.at(i + 1).toUInt());
                 }
             }
         }
         /* "old" style XML */
-        else if (root.name() == KXMLQLCFunctionValue)
-        {
+        else if (root.name() == KXMLQLCFunctionValue) {
             /* Channel value */
             SceneValue scv;
+
             if (scv.loadXML(root) == true)
                 setValue(scv);
         }
         /* "new" style XML */
-        else if (root.name() == KXMLQLCFixtureValues)
-        {
+        else if (root.name() == KXMLQLCFixtureValues) {
             quint32 fxi = root.attributes().value(KXMLQLCFixtureID).toString().toUInt();
             addFixture(fxi);
             QString strvals = root.readElementText();
-            if (strvals.isEmpty() == false)
-            {
+
+            if (strvals.isEmpty() == false) {
                 QStringList varray = strvals.split(",");
-                for (int i = 0; i + 1 < varray.count(); i+=2)
-                {
+
+                for (int i = 0; i + 1 < varray.count(); i += 2) {
                     SceneValue scv;
                     scv.fxi = fxi;
                     scv.channel = QString(varray.at(i)).toUInt();
@@ -586,21 +567,15 @@ bool Scene::loadXML(QXmlStreamReader &root)
                     setValue(scv);
                 }
             }
-        }
-        else if (root.name() == KXMLQLCFixtureGroup)
-        {
+        } else if (root.name() == KXMLQLCFixtureGroup) {
             quint32 id = root.attributes().value(KXMLQLCFixtureGroupID).toString().toUInt();
             addFixtureGroup(id);
             root.skipCurrentElement();
-        }
-        else if (root.name() == KXMLQLCPalette)
-        {
+        } else if (root.name() == KXMLQLCPalette) {
             quint32 id = root.attributes().value(KXMLQLCPaletteID).toString().toUInt();
             addPalette(id);
             root.skipCurrentElement();
-        }
-        else
-        {
+        } else {
             qWarning() << Q_FUNC_INFO << "Unknown scene tag:" << root.name();
             root.skipCurrentElement();
         }
@@ -609,11 +584,9 @@ bool Scene::loadXML(QXmlStreamReader &root)
     return true;
 }
 
-void Scene::postLoad()
-{
+void Scene::postLoad() {
     // Map legacy bus speed to fixed speed values
-    if (m_legacyFadeBus != Bus::invalid())
-    {
+    if (m_legacyFadeBus != Bus::invalid()) {
         quint32 value = Bus::instance()->value(m_legacyFadeBus);
         setFadeInSpeed((value / MasterTimer::frequency()) * 1000);
         setFadeOutSpeed((value / MasterTimer::frequency()) * 1000);
@@ -621,10 +594,11 @@ void Scene::postLoad()
 
     // Remove such fixtures and channels that don't exist
     QMutableMapIterator <SceneValue, uchar> it(m_values);
-    while (it.hasNext() == true)
-    {
+
+    while (it.hasNext() == true) {
         SceneValue value(it.next().key());
         Fixture* fxi = doc()->fixture(value.fxi);
+
         if (fxi == NULL || fxi->channel(value.channel) == NULL)
             it.remove();
     }
@@ -634,8 +608,7 @@ void Scene::postLoad()
  * Flashing
  ****************************************************************************/
 
-void Scene::flash(MasterTimer *timer)
-{
+void Scene::flash(MasterTimer *timer) {
     if (flashing() == true)
         return;
 
@@ -644,8 +617,7 @@ void Scene::flash(MasterTimer *timer)
     timer->registerDMXSource(this);
 }
 
-void Scene::unFlash(MasterTimer *timer)
-{
+void Scene::unFlash(MasterTimer *timer) {
     if (flashing() == false)
         return;
 
@@ -653,27 +625,24 @@ void Scene::unFlash(MasterTimer *timer)
     Function::unFlash(timer);
 }
 
-void Scene::writeDMX(MasterTimer *timer, QList<Universe *> ua)
-{
+void Scene::writeDMX(MasterTimer *timer, QList<Universe *> ua) {
     Q_UNUSED(ua)
     Q_ASSERT(timer != NULL);
 
-    if (flashing() == true)
-    {
-        if (m_fadersMap.isEmpty())
-        {
+    if (flashing() == true) {
+        if (m_fadersMap.isEmpty()) {
             // Keep HTP and LTP channels up. Flash is more or less a forceful intervention
             // so enforce all values that the user has chosen to flash.
-            foreach (const SceneValue& sv, m_values.keys())
-            {
+            foreach (const SceneValue & sv, m_values.keys()) {
                 FadeChannel fc(doc(), sv.fxi, sv.channel);
                 quint32 universe = fc.universe();
+
                 if (universe == Universe::invalid())
                     continue;
 
                 QSharedPointer<GenericFader> fader = m_fadersMap.value(universe, QSharedPointer<GenericFader>());
-                if (fader.isNull())
-                {
+
+                if (fader.isNull()) {
                     fader = ua[universe]->requestFader();
                     fader->adjustIntensity(getAttributeValue(Intensity));
                     fader->setBlendMode(blendMode());
@@ -687,9 +656,7 @@ void Scene::writeDMX(MasterTimer *timer, QList<Universe *> ua)
                 fader->add(fc);
             }
         }
-    }
-    else
-    {
+    } else {
         dismissAllFaders();
         timer->unregisterDMXSource(this);
     }
@@ -699,20 +666,20 @@ void Scene::writeDMX(MasterTimer *timer, QList<Universe *> ua)
  * Running
  ****************************************************************************/
 
-void Scene::processValue(MasterTimer *timer, QList<Universe*> ua, uint fadeIn, SceneValue &scv)
-{
+void Scene::processValue(MasterTimer *timer, QList<Universe*> ua, uint fadeIn, SceneValue & scv) {
     Fixture *fixture = doc()->fixture(scv.fxi);
 
     if (fixture == NULL)
         return;
 
     quint32 universe = fixture->universe();
+
     if (universe == Universe::invalid())
         return;
 
     QSharedPointer<GenericFader> fader = m_fadersMap.value(universe, QSharedPointer<GenericFader>());
-    if (fader.isNull())
-    {
+
+    if (fader.isNull()) {
         fader = ua[universe]->requestFader();
         fader->adjustIntensity(getAttributeValue(Intensity));
         fader->setBlendMode(blendMode());
@@ -728,33 +695,26 @@ void Scene::processValue(MasterTimer *timer, QList<Universe*> ua, uint fadeIn, S
     /** If a blend Function has been set, check if this channel needs to
      *  be blended from a previous value. If so, mark it for crossfade
      *  and set its current value */
-    if (blendFunctionID() != Function::invalidId())
-    {
+    if (blendFunctionID() != Function::invalidId()) {
         Scene *blendScene = qobject_cast<Scene *>(doc()->function(blendFunctionID()));
-        if (blendScene != NULL && blendScene->checkValue(scv))
-        {
+
+        if (blendScene != NULL && blendScene->checkValue(scv)) {
             fc->addFlag(FadeChannel::CrossFade);
             fc->setCurrent(blendScene->value(scv.fxi, scv.channel));
             qDebug() << "----- BLEND from Scene" << blendScene->name()
                      << ", fixture:" << scv.fxi << ", channel:" << scv.channel << ", value:" << fc->current();
         }
-    }
-    else
-    {
+    } else {
         qDebug() << "Scene" << name() << "add channel" << scv.channel << "from" << fc->current() << "to" << scv.value;
     }
 
     fc->setStart(fc->current());
     fc->setTarget(scv.value);
 
-    if (fc->canFade() == false)
-    {
+    if (fc->canFade() == false) {
         fc->setFadeTime(0);
-    }
-    else
-    {
-        if (tempoType() == Beats)
-        {
+    } else {
+        if (tempoType() == Beats) {
             int fadeInTime = beatsToTime(fadeIn, timer->beatTimeDuration());
             int beatOffset = timer->nextBeatTimeOffset();
 
@@ -762,31 +722,26 @@ void Scene::processValue(MasterTimer *timer, QList<Universe*> ua, uint fadeIn, S
                 fc->setFadeTime(fadeInTime - beatOffset);
             else
                 fc->setFadeTime(fadeInTime);
-        }
-        else
-        {
+        } else {
             fc->setFadeTime(fadeIn);
         }
     }
 }
 
-void Scene::write(MasterTimer *timer, QList<Universe*> ua)
-{
+void Scene::write(MasterTimer *timer, QList<Universe*> ua) {
     //qDebug() << Q_FUNC_INFO << elapsed();
 
-    if (m_values.count() == 0 && m_palettes.count() == 0)
-    {
+    if (m_values.count() == 0 && m_palettes.count() == 0) {
         stop(FunctionParent::master());
         return;
     }
 
-    if (m_fadersMap.isEmpty())
-    {
+    if (m_fadersMap.isEmpty()) {
         uint fadeIn = overrideFadeInSpeed() == defaultSpeed() ? fadeInSpeed() : overrideFadeInSpeed();
 
-        foreach (quint32 paletteID, palettes())
-        {
+        foreach (quint32 paletteID, palettes()) {
             QLCPalette *palette = doc()->palette(paletteID);
+
             if (palette == NULL)
                 continue;
 
@@ -799,39 +754,34 @@ void Scene::write(MasterTimer *timer, QList<Universe*> ua)
 
         QMutexLocker locker(&m_valueListMutex);
         QMapIterator <SceneValue, uchar> it(m_values);
-        while (it.hasNext() == true)
-        {
+
+        while (it.hasNext() == true) {
             SceneValue scv(it.next().key());
             processValue(timer, ua, fadeIn, scv);
         }
     }
 
-    if (isPaused() == false)
-    {
+    if (isPaused() == false) {
         incrementElapsed();
+
         if (timer->isBeat() && tempoType() == Beats)
             incrementElapsedBeats();
     }
 }
 
-void Scene::postRun(MasterTimer* timer, QList<Universe *> ua)
-{
+void Scene::postRun(MasterTimer* timer, QList<Universe *> ua) {
     uint fadeout = overrideFadeOutSpeed() == defaultSpeed() ? fadeOutSpeed() : overrideFadeOutSpeed();
 
     /* If no fade out is needed, dismiss all the requested faders.
      * Otherwise, set all the faders to fade out and let Universe dismiss them
      * when done */
-    if (fadeout == 0)
-    {
+    if (fadeout == 0) {
         dismissAllFaders();
-    }
-    else
-    {
+    } else {
         if (tempoType() == Beats)
             fadeout = beatsToTime(fadeout, timer->beatTimeDuration());
 
-        foreach (QSharedPointer<GenericFader> fader, m_fadersMap.values())
-        {
+        foreach (QSharedPointer<GenericFader> fader, m_fadersMap.values()) {
             if (!fader.isNull())
                 fader->setFadeOut(true, fadeout);
         }
@@ -849,22 +799,16 @@ void Scene::postRun(MasterTimer* timer, QList<Universe *> ua)
  * Intensity
  ****************************************************************************/
 
-int Scene::adjustAttribute(qreal fraction, int attributeId)
-{
+int Scene::adjustAttribute(qreal fraction, int attributeId) {
     int attrIndex = Function::adjustAttribute(fraction, attributeId);
 
-    if (attrIndex == Intensity)
-    {
-        foreach (QSharedPointer<GenericFader> fader, m_fadersMap.values())
-        {
+    if (attrIndex == Intensity) {
+        foreach (QSharedPointer<GenericFader> fader, m_fadersMap.values()) {
             if (!fader.isNull())
                 fader->adjustIntensity(getAttributeValue(Function::Intensity));
         }
-    }
-    else if (attrIndex == ParentIntensity)
-    {
-        foreach (QSharedPointer<GenericFader> fader, m_fadersMap.values())
-        {
+    } else if (attrIndex == ParentIntensity) {
+        foreach (QSharedPointer<GenericFader> fader, m_fadersMap.values()) {
             if (!fader.isNull())
                 fader->setParentIntensity(getAttributeValue(ParentIntensity));
         }
@@ -877,15 +821,13 @@ int Scene::adjustAttribute(qreal fraction, int attributeId)
  * Blend mode
  *************************************************************************/
 
-void Scene::setBlendMode(Universe::BlendMode mode)
-{
+void Scene::setBlendMode(Universe::BlendMode mode) {
     if (mode == blendMode())
         return;
 
     qDebug() << "Scene" << name() << "blend mode set to" << Universe::blendModeToString(mode);
 
-    foreach (QSharedPointer<GenericFader> fader, m_fadersMap.values())
-    {
+    foreach (QSharedPointer<GenericFader> fader, m_fadersMap.values()) {
         if (!fader.isNull())
             fader->setBlendMode(mode);
     }
@@ -893,20 +835,30 @@ void Scene::setBlendMode(Universe::BlendMode mode)
     Function::setBlendMode(mode);
 }
 
-quint32 Scene::blendFunctionID() const
-{
+quint32 Scene::blendFunctionID() const {
     return m_blendFunctionID;
 }
 
-void Scene::setBlendFunctionID(quint32 fid)
-{
+void Scene::setBlendFunctionID(quint32 fid) {
     m_blendFunctionID = fid;
-    if (isRunning() && fid == Function::invalidId())
-    {
-        foreach (QSharedPointer<GenericFader> fader, m_fadersMap.values())
-        {
+
+    if (isRunning() && fid == Function::invalidId()) {
+        foreach (QSharedPointer<GenericFader> fader, m_fadersMap.values()) {
             if (!fader.isNull())
                 fader->resetCrossfade();
         }
+    }
+}
+
+/*************************************************************************
+* RFU
+*************************************************************************/
+bool Scene::isRFUEnabled() {
+    return m_RFUEnabled;
+}
+void Scene::setRFUEnabled(bool enabled) {
+    if(m_RFUEnabled != enabled) {
+        m_RFUEnabled = enabled;
+        emit changed(this->id());
     }
 }

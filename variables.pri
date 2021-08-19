@@ -78,7 +78,7 @@ win32:QMAKE_LFLAGS += -Wl,--enable-auto-import
 # Install root
 win32:INSTALLROOT       = $$(SystemDrive)/qlcplus
 macx:INSTALLROOT        = ~/QLC+.app/Contents
-unix:!macx:INSTALLROOT += /usr
+unix:!macx:INSTALLROOT += /home/brian/git/qlcplus_rfu/runtime
 android:INSTALLROOT     = /
 ios:INSTALLROOT         = /
 
@@ -253,7 +253,7 @@ android:USERCOLORFILTERSDIR    = $$USERDATADIR/colorfilters
 ios:USERCOLORFILTERSDIR        = $$USERDATADIR/ColorFilters
 
 # udev rules
-unix:!macx:UDEVRULESDIR = /etc/udev/rules.d
+unix:!macx:UDEVRULESDIR = $$INSTALLROOT/etc/udev/rules.d
 
 # AppStream metadata
 unix:!macx:METAINFODIR = $$INSTALLROOT/share/metainfo
