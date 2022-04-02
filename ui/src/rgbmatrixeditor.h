@@ -24,6 +24,7 @@
 #include <QHash>
 
 #include "ui_rgbmatrixeditor.h"
+#include "inputselectionwidget.h"
 #include "rgbmatrix.h"
 #include "qlcpoint.h"
 #include "doc.h"
@@ -37,104 +38,107 @@ class QTimer;
  * @{
  */
 
-class RGBMatrixEditor : public QWidget, public Ui_RGBMatrixEditor
-{
-    Q_OBJECT
-    Q_DISABLE_COPY(RGBMatrixEditor)
+class RGBMatrixEditor : public QWidget, public Ui_RGBMatrixEditor {
+        Q_OBJECT
+        Q_DISABLE_COPY(RGBMatrixEditor)
 
-    /************************************************************************
-     * Initialization
-     ************************************************************************/
-public:
-    RGBMatrixEditor(QWidget* parent, RGBMatrix* mtx, Doc* doc);
-    ~RGBMatrixEditor();
+        /************************************************************************
+         * Initialization
+         ************************************************************************/
+    public:
+        RGBMatrixEditor(QWidget* parent, RGBMatrix* mtx, Doc* doc);
+        ~RGBMatrixEditor();
 
-    void stopTest();
+        void stopTest();
 
-public slots:
-    void slotFunctionManagerActive(bool active);
+    public slots:
+        void slotFunctionManagerActive(bool active);
 
-private:
-    void init();
+    private:
+        void init();
 
-    void updateSpeedDials();
-    void fillPatternCombo();
-    void fillFixtureGroupCombo();
-    void fillAnimationCombo();
-    void fillImageAnimationCombo();
-    void updateExtraOptions();
-    void updateColors();
-    void resetProperties(QLayoutItem *item);
-    void displayProperties(RGBScript *script);
+        void updateSpeedDials();
+        void fillPatternCombo();
+        void fillFixtureGroupCombo();
+        void fillAnimationCombo();
+        void fillImageAnimationCombo();
+        void updateExtraOptions();
+        void updateColors();
+        void resetProperties(QLayoutItem *item);
+        void displayProperties(RGBScript *script);
 
-    bool createPreviewItems();
+        bool createPreviewItems();
 
-private slots:
-    void slotPreviewTimeout();
-    void slotNameEdited(const QString& text);
-    void slotSpeedDialToggle(bool state);
-    void slotPatternActivated(const QString& text);
-    void slotFixtureGroupActivated(int index);
-    void slotBlendModeChanged(int index);
-    void slotControlModeChanged(int index);
-    void slotStartColorButtonClicked();
-    void slotEndColorButtonClicked();
-    void slotResetEndColorButtonClicked();
+    private slots:
+        void slotPreviewTimeout();
+        void slotNameEdited(const QString & text);
+        void slotSpeedDialToggle(bool state);
+        void slotPatternActivated(const QString & text);
+        void slotFixtureGroupActivated(int index);
+        void slotBlendModeChanged(int index);
+        void slotControlModeChanged(int index);
+        void slotStartColorButtonClicked();
+        void slotEndColorButtonClicked();
+        void slotResetEndColorButtonClicked();
 
-    void slotTextEdited(const QString& text);
-    void slotFontButtonClicked();
-    void slotAnimationActivated(const QString& text);
-    void slotOffsetSpinChanged();
+        void slotTextEdited(const QString & text);
+        void slotFontButtonClicked();
+        void slotAnimationActivated(const QString & text);
+        void slotOffsetSpinChanged();
 
-    void slotImageEdited();
-    void slotImageButtonClicked();
-    void slotImageAnimationActivated(const QString& text);
+        void slotImageEdited();
+        void slotImageButtonClicked();
+        void slotImageAnimationActivated(const QString & text);
 
-    void slotLoopClicked();
-    void slotPingPongClicked();
-    void slotSingleShotClicked();
+        void slotLoopClicked();
+        void slotPingPongClicked();
+        void slotSingleShotClicked();
 
-    void slotForwardClicked();
-    void slotBackwardClicked();
+        void slotForwardClicked();
+        void slotBackwardClicked();
 
-    void slotDimmerControlClicked();
+        void slotDimmerControlClicked();
 
-    void slotFadeInChanged(int ms);
-    void slotFadeOutChanged(int ms);
-    void slotHoldChanged(int ms);
-    void slotDurationTapped();
-    void slotDialDestroyed(QObject* dial);
+        void slotFadeInChanged(int ms);
+        void slotFadeOutChanged(int ms);
+        void slotHoldChanged(int ms);
+        void slotDurationTapped();
+        void slotDialDestroyed(QObject* dial);
 
-    void slotTestClicked();
-    void slotRestartTest();
-    void slotModeChanged(Doc::Mode mode);
-    void slotFixtureGroupAdded();
-    void slotFixtureGroupRemoved();
-    void slotFixtureGroupChanged(quint32 id);
+        void slotTestClicked();
+        void slotRestartTest();
+        void slotModeChanged(Doc::Mode mode);
+        void slotFixtureGroupAdded();
+        void slotFixtureGroupRemoved();
+        void slotFixtureGroupChanged(quint32 id);
 
-    void slotSaveToSequenceClicked();
-    void slotShapeToggle(bool);
+        void slotSaveToSequenceClicked();
+        void slotShapeToggle(bool);
 
-    void slotPropertyComboChanged(QString value);
-    void slotPropertySpinChanged(int value);
+        void slotPropertyComboChanged(QString value);
+        void slotPropertySpinChanged(int value);
 
-private:
-    FunctionParent functionParent() const;
+        void slotMasterDimToAllClicked();
 
-private:
-    Doc* m_doc;
-    RGBMatrix* m_matrix; // The RGBMatrix being edited
-    RGBMatrixStep *m_previewHandler;
+    private:
+        FunctionParent functionParent() const;
 
-    QList <RGBScript> m_scripts;
+    private:
+        Doc* m_doc;
+        RGBMatrix* m_matrix; // The RGBMatrix being edited
+        RGBMatrixStep *m_previewHandler;
 
-    SpeedDialWidget *m_speedDials;
+        QList <RGBScript> m_scripts;
 
-    QGraphicsScene* m_scene;
-    QTimer* m_previewTimer;
-    uint m_previewIterator;
+        SpeedDialWidget *m_speedDials;
 
-    QHash<QLCPoint, RGBItem*> m_previewHash;
+        QGraphicsScene* m_scene;
+        QTimer* m_previewTimer;
+        uint m_previewIterator;
+
+        QHash<QLCPoint, RGBItem*> m_previewHash;
+
+        InputSelectionWidget * m_masterDimmerSelector;
 };
 
 /** @} */

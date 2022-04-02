@@ -373,6 +373,28 @@
       </widget>
      </item>
      <item>
+      <widget class="QGroupBox" name="m_masterDimmerGroup">
+       <property name="title">
+        <string>Master Dimmer</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+       </property>
+       <layout class="QVBoxLayout" name="verticalLayout_6">
+        <item>
+         <widget class="QPushButton" name="m_mdToAll">
+          <property name="toolTip">
+           <string>Assign this Master Dimmer source to all RGB Matrix effects</string>
+          </property>
+          <property name="text">
+           <string>Apply to All</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </item>
+     <item>
       <spacer name="verticalSpacer_4">
        <property name="orientation">
         <enum>Qt::Vertical</enum>

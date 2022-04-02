@@ -28,55 +28,55 @@
 
 class Doc;
 
-class InputSelectionWidget : public QWidget, public Ui_InputSelectionWidget
-{
-    Q_OBJECT
+class InputSelectionWidget : public QWidget, public Ui_InputSelectionWidget {
+        Q_OBJECT
 
-public:
-    InputSelectionWidget(Doc* doc, QWidget *parent = 0);
-    ~InputSelectionWidget();
+    public:
+        InputSelectionWidget(Doc* doc, QWidget *parent = 0);
+        ~InputSelectionWidget();
 
-    void setKeyInputVisibility(bool visible);
-    void setCustomFeedbackVisibility(bool visible);
-    void setTitle(QString title);
-    void setWidgetPage(int page);
-    bool isAutoDetecting();
-    void stopAutoDetection();
-    void emitOddValues(bool enable);
+        void setKeyInputVisibility(bool visible);
+        void setCustomFeedbackVisibility(bool visible);
+        void setTitle(QString title);
+        void setWidgetPage(int page);
+        bool isAutoDetecting();
+        void stopAutoDetection();
+        void emitOddValues(bool enable);
 
-    void setKeySequence(const QKeySequence& keySequence);
-    QKeySequence keySequence() const;
+        void setKeySequence(const QKeySequence & keySequence);
+        QKeySequence keySequence() const;
 
-    void setInputSource(QSharedPointer<QLCInputSource> const& source);
-    QSharedPointer<QLCInputSource> inputSource() const;
+        void setInputSource(QSharedPointer<QLCInputSource> const & source);
+        QSharedPointer<QLCInputSource> inputSource() const;
 
-protected slots:
-    void slotAttachKey();
-    void slotDetachKey();
+    protected slots:
+        void slotAttachKey();
+        void slotDetachKey();
 
-    void slotAutoDetectInputToggled(bool checked);
-    void slotInputValueChanged(quint32 universe, quint32 channel);
-    void slotChooseInputClicked();
+        void slotAutoDetectInputToggled(bool checked);
+        void slotInputValueChanged(quint32 universe, quint32 channel);
+        void slotChooseInputClicked();
 
-    void slotCustomFeedbackToggled(bool checked);
-    void slotLowerSpinValueChanged(int value);
-    void slotUpperSpinValueChanged(int value);
+        void slotCustomFeedbackToggled(bool checked);
+        void slotLowerSpinValueChanged(int value);
+        void slotUpperSpinValueChanged(int value);
 
-signals:
-    void autoDetectToggled(bool checked);
-    void inputValueChanged(quint32 universe, quint32 channel);
-    void keySequenceChanged(QKeySequence key);
+    signals:
+        void autoDetectToggled(bool checked);
+        void inputValueChanged(quint32 universe, quint32 channel);
+        void keySequenceChanged(QKeySequence key);
+        void inputSourceChanged(QSharedPointer<QLCInputSource> new_source);
 
-protected:
-    void updateInputSource();
+    protected:
+        void updateInputSource(bool emit_signal);
 
-private:
-    Doc* m_doc;
-    QKeySequence m_keySequence;
-    QSharedPointer<QLCInputSource> m_inputSource;
-    int m_widgetPage;
-    bool m_emitOdd;
-    quint32 m_signalsReceived;
+    private:
+        Doc* m_doc;
+        QKeySequence m_keySequence;
+        QSharedPointer<QLCInputSource> m_inputSource;
+        int m_widgetPage;
+        bool m_emitOdd;
+        quint32 m_signalsReceived;
 };
 
 #endif // INPUTSELECTIONWIDGET_H

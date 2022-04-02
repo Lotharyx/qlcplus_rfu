@@ -20,6 +20,8 @@
 #ifndef QLCINPUTSOURCE_H
 #define QLCINPUTSOURCE_H
 
+#include <QXmlStreamReader>
+#include <QXmlStreamWriter>
 #include <QThread>
 #include <QMutex>
 
@@ -27,122 +29,146 @@
  * @{
  */
 
-class QLCInputSource: public QThread
-{
-    Q_OBJECT
+class QLCInputSource: public QThread {
+        Q_OBJECT
 
-public:
-    static quint32 invalidUniverse;
-    static quint32 invalidChannel;
-    static quint32 invalidID;
+    public:
+        static quint32 invalidUniverse;
+        static quint32 invalidChannel;
+        static quint32 invalidID;
 
-public:
-    QLCInputSource(QThread * parent = 0);
-    QLCInputSource(quint32 universe, quint32 channel, QThread * parent = 0);
-    virtual ~QLCInputSource();
+    public:
+        QLCInputSource(QThread * parent = 0);
+        QLCInputSource(quint32 universe, quint32 channel, QThread * parent = 0);
+        virtual ~QLCInputSource();
 
-    bool isValid() const;
+        bool isValid() const;
 
-    /** Get/set the input source universe */
-    void setUniverse(quint32 uni);
-    quint32 universe() const;
+        /** Get/set the input source universe */
+        void setUniverse(quint32 uni);
+        quint32 universe() const;
 
-    /** Get/set the input source channel */
-    void setChannel(quint32 ch);
-    quint32 channel() const;
+        /** Get/set the input source channel */
+        void setChannel(quint32 ch);
+        quint32 channel() const;
 
-    /** Set the input source page by masking it to the
-     *  existing input channel */
-    void setPage(ushort pgNum);
+        /** Set the input source page by masking it to the
+         *  existing input channel */
+        void setPage(ushort pgNum);
 
-    /** Return the input source page retrieve from a masked channel */
-    ushort page() const;
+        /** Return the input source page retrieve from a masked channel */
+        ushort page() const;
 
-    /** Get/set the input source target ID */
-    void setID(quint32 id);
-    quint32 id() const;
+        /** Get/set the input source target ID */
+        void setID(quint32 id);
+        quint32 id() const;
 
-private:
-    /** The universe from which this input source comes from */
-    quint32 m_universe;
+    private:
+        /** The universe from which this input source comes from */
+        quint32 m_universe;
 
-    /** The channel from which this input source comes from */
-    quint32 m_channel;
+        /** The channel from which this input source comes from */
+        quint32 m_channel;
 
-    /** The target ID of this input source */
-    quint32 m_id;
+        /** The target ID of this input source */
+        quint32 m_id;
 
-    /*********************************************************************
-     * Custom feedback
-     *********************************************************************/
-public:
-    void setRange(uchar lower, uchar upper);
-    uchar lowerValue() const;
-    uchar upperValue() const;
+        /*********************************************************************
+         * Custom feedback
+         *********************************************************************/
+    public:
+        void setRange(uchar lower, uchar upper);
+        uchar lowerValue() const;
+        uchar upperValue() const;
 
-protected:
-    uchar m_lower, m_upper;
+    protected:
+        uchar m_lower, m_upper;
 
-    /*********************************************************************
-     * Working mode
-     *********************************************************************/
-public:
-    /** Movement behaviour */
-    enum WorkingMode {
-        Absolute = 0,
-        Relative = 1,
-        Encoder = 2
-    };
+        /*********************************************************************
+         * Working mode
+         *********************************************************************/
+    public:
+        /** Movement behaviour */
+        enum WorkingMode {
+            Absolute = 0,
+            Relative = 1,
+            Encoder = 2,
+            Joystick = 3
+        };
 
-    WorkingMode workingMode() const;
-    void setWorkingMode(WorkingMode mode);
+        WorkingMode workingMode() const;
+        void setWorkingMode(WorkingMode mode);
 
-    bool needsUpdate();
+        bool needsUpdate();
 
-    int sensitivity() const;
-    void setSensitivity(int value);
+        int sensitivity() const;
+        void setSensitivity(int value);
 
-    bool sendExtraPressRelease() const;
-    void setSendExtraPressRelease(bool enable);
+        bool sendExtraPressRelease() const;
+        void setSendExtraPressRelease(bool enable);
 
-    void updateInputValue(uchar value);
-    void updateOuputValue(uchar value);
+        void updateInputValue(uchar value);
+        void updateOuputValue(uchar value);
 
-private:
-    /** @reimp */
-    void run();
+    private:
+        /** @reimp */
+        void run();
 
-protected:
-    /** The input source mode: absolute or relative */
-    WorkingMode m_workingMode;
+    protected:
+        /** The input source mode: absolute or relative */
+        WorkingMode m_workingMode;
 
-    /** When in relative mode, this defines the sensitivity
-     *  of synthetic emitted values against the external input value */
-    int m_sensitivity;
+        /** When in relative mode, this defines the sensitivity
+         *  of synthetic emitted values against the external input value */
+        int m_sensitivity;
 
-    /** When enabled, this flag will emit an extra synthetic signal
-     *  to simulate a press or release event */
-    bool m_emitExtraPressRelease;
+        /** When enabled, this flag will emit an extra synthetic signal
+         *  to simulate a press or release event */
+        bool m_emitExtraPressRelease;
 
-    /** The input value received from an external controller */
-    uchar m_inputValue;
+        /** The input value received from an external controller */
+        uchar m_inputValue;
 
-    /** The DMX value of a QLC+ item using this source.
-     *  It is used to keep in sync this source and QLC+ */
-    uchar m_outputValue;
+        /** The DMX value of a QLC+ item using this source.
+         *  It is used to keep in sync this source and QLC+ */
+        uchar m_outputValue;
 
-    /** Thread running state condition variable.
-     *  Used only in relative working mode */
-    bool m_running;
+        /** Thread running state condition variable.
+         *  Used only in relative working mode */
+        bool m_running;
 
-    /** Mutex to syncronize input/output value updates */
-    QMutex m_mutex;
+        /** Mutex to syncronize input/output value updates */
+        QMutex m_mutex;
 
-signals:
-    /** Signal emitted when the input source is in relative
-     *  working mode. It emits synthetic generated values */
-    void inputValueChanged(quint32 universe, quint32 channel,
-                           uchar value, const QString& key = 0);
+    signals:
+        /** Signal emitted when the input source is in relative
+         *  working mode. It emits synthetic generated values */
+        void inputValueChanged(quint32 universe, quint32 channel,
+                               uchar value, const QString & key = 0);
+
+        /** Signal emitted when clients don't want to worry about
+         *  universe and channel values (this class already knows
+         *  them anyway). */
+        void valueChanged(uchar value);
+
+    public slots:
+        /** Slot to receive value updates from the IO patch */
+        void slotValueChanged(quint32 universe, quint32 channel,
+                              uchar value, const QString & key = 0);
+
+
+        /*********************************************************************
+         * Load & Save
+         *********************************************************************/
+    public:
+        bool saveXML(QXmlStreamWriter *doc);
+        bool loadXML(QXmlStreamReader & root);
+        void postLoad();
+
+    protected:
+        static QString workingModeToString(WorkingMode mode);
+        static WorkingMode stringToWorkingMode(const QString & mode_string);
+
 };
 
 /** @} */

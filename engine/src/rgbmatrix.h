@@ -31,11 +31,12 @@
 #include <QMutex>
 
 #ifdef QT_QML_LIB
-  #include "rgbscriptv4.h"
+#include "rgbscriptv4.h"
 #else
-  #include "rgbscript.h"
+#include "rgbscript.h"
 #endif
 #include "function.h"
+#include "qlcinputsource.h"
 
 class QElapsedTimer;
 class FixtureGroup;
@@ -47,265 +48,280 @@ class QDir;
  * @{
  */
 
-class RGBMatrixStep
-{
-public:
-    RGBMatrixStep();
-    ~RGBMatrixStep() { }
+class RGBMatrixStep {
+    public:
+        RGBMatrixStep();
+        ~RGBMatrixStep() { }
 
-public:
-    /** Set/Get the current step index */
-    void setCurrentStepIndex(int index);
-    int currentStepIndex() const;
+    public:
+        /** Set/Get the current step index */
+        void setCurrentStepIndex(int index);
+        int currentStepIndex() const;
 
-    /** Calculate the RGB components delta between $startColor and $endColor */
-    void calculateColorDelta(QColor startColor, QColor endColor);
+        /** Calculate the RGB components delta between $startColor and $endColor */
+        void calculateColorDelta(QColor startColor, QColor endColor);
 
-    /** Set/Get the final color of the next step to be reproduced */
-    void setStepColor(QColor color);
-    QColor stepColor();
+        /** Set/Get the final color of the next step to be reproduced */
+        void setStepColor(QColor color);
+        QColor stepColor();
 
-    /** Update the color of the next step to be reproduced, considering the step index,
-     *  the start color and the steps count */
-    void updateStepColor(int step, QColor startColor, int stepsCount);
+        /** Update the color of the next step to be reproduced, considering the step index,
+         *  the start color and the steps count */
+        void updateStepColor(int step, QColor startColor, int stepsCount);
 
-    /** Initialize the playback direction and set the initial step index and
-      * color based on $startColor and $endColor */
-    void initializeDirection(Function::Direction direction, QColor startColor, QColor endColor, int stepsCount);
+        /** Initialize the playback direction and set the initial step index and
+          * color based on $startColor and $endColor */
+        void initializeDirection(Function::Direction direction, QColor startColor, QColor endColor, int stepsCount);
 
-    /** Check the steps progression based on $order and the internal m_direction.
-     *  This method returns true if the RGBMatrix can continue to run, otherwise
-     *  false is returned and the caller should stop the RGBMatrix */
-    bool checkNextStep(Function::RunOrder order, QColor startColor, QColor endColor, int stepsNumber);
+        /** Check the steps progression based on $order and the internal m_direction.
+         *  This method returns true if the RGBMatrix can continue to run, otherwise
+         *  false is returned and the caller should stop the RGBMatrix */
+        bool checkNextStep(Function::RunOrder order, QColor startColor, QColor endColor, int stepsNumber);
 
-public:
-    /** Matrix RGB data of the current step */
-    RGBMap m_map;
+    public:
+        /** Matrix RGB data of the current step */
+        RGBMap m_map;
 
-private:
-    /** The current direction of the steps playback */
-    Function::Direction m_direction;
-    /** The index of the algorithm step currently being reproduced */
-    int m_currentStepIndex;
-    /** The RGB color passed to the currently loaded algorithm */
-    QColor m_stepColor;
-    /** Color delta values of the RGB components between each step */
-    int m_crDelta, m_cgDelta, m_cbDelta;
+    private:
+        /** The current direction of the steps playback */
+        Function::Direction m_direction;
+        /** The index of the algorithm step currently being reproduced */
+        int m_currentStepIndex;
+        /** The RGB color passed to the currently loaded algorithm */
+        QColor m_stepColor;
+        /** Color delta values of the RGB components between each step */
+        int m_crDelta, m_cgDelta, m_cbDelta;
 };
 
-class RGBMatrix : public Function
-{
-    Q_OBJECT
-    Q_DISABLE_COPY(RGBMatrix)
+class RGBMatrix : public Function {
+        Q_OBJECT
+        Q_DISABLE_COPY(RGBMatrix)
 
-   /*********************************************************************
-     * Initialization
-     *********************************************************************/
-public:
-    RGBMatrix(Doc* parent);
-    ~RGBMatrix();
+        /*********************************************************************
+          * Initialization
+          *********************************************************************/
+    public:
+        RGBMatrix(Doc* parent);
+        ~RGBMatrix();
 
-    /** @reimp */
-    QIcon getIcon() const;
+        /** @reimp */
+        QIcon getIcon() const;
 
-    /*********************************************************************
-     * Contents
-     *********************************************************************/
-public:
-    /** @reimp */
-    void setTotalDuration(quint32 msec);
+        /*********************************************************************
+         * Contents
+         *********************************************************************/
+    public:
+        /** @reimp */
+        void setTotalDuration(quint32 msec);
 
-    /** @reimp */
-    quint32 totalDuration();
+        /** @reimp */
+        quint32 totalDuration();
 
-    /** Set the matrix to control or not the dimmer channel */
-    void setDimmerControl(bool dimmerControl);
+        /** Set the matrix to control or not the dimmer channel */
+        void setDimmerControl(bool dimmerControl);
 
-    /** Get the matrix ability to control the dimmer channel */
-    bool dimmerControl() const;
+        /** Get the matrix ability to control the dimmer channel */
+        bool dimmerControl() const;
 
-private:
-    // LEGACY: replaced by ControlModeDimmer
-    bool m_dimmerControl;
+    private:
+        // LEGACY: replaced by ControlModeDimmer
+        bool m_dimmerControl;
 
-    /*********************************************************************
-     * Copying
-     *********************************************************************/
-public:
-    /** @reimp */
-    virtual Function* createCopy(Doc* doc, bool addToDoc = true);
+        /*********************************************************************
+         * Copying
+         *********************************************************************/
+    public:
+        /** @reimp */
+        virtual Function* createCopy(Doc* doc, bool addToDoc = true);
 
-    /** @reimp */
-    virtual bool copyFrom(const Function* function);
+        /** @reimp */
+        virtual bool copyFrom(const Function* function);
 
-    /************************************************************************
-     * Fixture Group
-     ************************************************************************/
-public:
-    /** Get/Set the Fixture Group associated to this RGBMatrix */
-    quint32 fixtureGroup() const;
-    void setFixtureGroup(quint32 id);
+        /************************************************************************
+         * Fixture Group
+         ************************************************************************/
+    public:
+        /** Get/Set the Fixture Group associated to this RGBMatrix */
+        quint32 fixtureGroup() const;
+        void setFixtureGroup(quint32 id);
 
-    /** @reimp */
-    QList<quint32> components();
+        /** @reimp */
+        QList<quint32> components();
 
-private:
-    quint32 m_fixtureGroupID;
-    FixtureGroup *m_group;
+    private:
+        quint32 m_fixtureGroupID;
+        FixtureGroup *m_group;
 
-    /************************************************************************
-     * Algorithm
-     ************************************************************************/
-public:
-    /** Set the current RGB Algorithm. RGBMatrix takes ownership of the pointer. */
-    void setAlgorithm(RGBAlgorithm* algo);
+        /************************************************************************
+         * Algorithm
+         ************************************************************************/
+    public:
+        /** Set the current RGB Algorithm. RGBMatrix takes ownership of the pointer. */
+        void setAlgorithm(RGBAlgorithm* algo);
 
-    /** Get the current RGB Algorithm. */
-    RGBAlgorithm* algorithm() const;
+        /** Get the current RGB Algorithm. */
+        RGBAlgorithm* algorithm() const;
 
-    /** Get the algorithm protection mutex */
+        /** Get the algorithm protection mutex */
 #if QT_VERSION < QT_VERSION_CHECK(5, 14, 0)
-    QMutex& algorithmMutex();
+        QMutex & algorithmMutex();
 #else
-    QRecursiveMutex& algorithmMutex();
+        QRecursiveMutex & algorithmMutex();
 #endif
 
-    /** Get the number of steps of the current algorithm */
-    int stepsCount();
+        /** Get the number of steps of the current algorithm */
+        int stepsCount();
 
-    /** Get the preview of the current algorithm at the given step */
-    void previewMap(int step, RGBMatrixStep *handler);
+        /** Get the preview of the current algorithm at the given step */
+        void previewMap(int step, RGBMatrixStep *handler);
 
-private:
-    RGBAlgorithm *m_algorithm;
+    private:
+        RGBAlgorithm *m_algorithm;
 #if QT_VERSION < QT_VERSION_CHECK(5, 14, 0)
-    QMutex m_algorithmMutex;
+        QMutex m_algorithmMutex;
 #else
-    QRecursiveMutex m_algorithmMutex;
+        QRecursiveMutex m_algorithmMutex;
 #endif
 
-    /************************************************************************
-     * Color
-     ************************************************************************/
-public:
-    void setStartColor(const QColor& c);
-    QColor startColor() const;
+        /************************************************************************
+         * Color
+         ************************************************************************/
+    public:
+        void setStartColor(const QColor & c);
+        QColor startColor() const;
 
-    void setEndColor(const QColor& c);
-    QColor endColor() const;
+        void setEndColor(const QColor & c);
+        QColor endColor() const;
 
-    void updateColorDelta();
+        void updateColorDelta();
 
-private:
-    QColor m_startColor;
-    QColor m_endColor;
-    RGBMatrixStep *m_stepHandler;
+    private:
+        QColor m_startColor;
+        QColor m_endColor;
+        RGBMatrixStep *m_stepHandler;
 
-    /************************************************************************
-     * Properties
-     ************************************************************************/
-public:
-    /** Set the value of the property with the given name */
-    void setProperty(QString propName, QString value);
+        /************************************************************************
+         * Properties
+         ************************************************************************/
+    public:
+        /** Set the value of the property with the given name */
+        void setProperty(QString propName, QString value);
 
-    /** Retrieve the value of the property with the given name */
-    QString property(QString propName);
+        /** Retrieve the value of the property with the given name */
+        QString property(QString propName);
 
-private:
-    /** A map of the custom properties for this matrix */
-    QHash<QString, QString>m_properties;
+    private:
+        /** A map of the custom properties for this matrix */
+        QHash<QString, QString>m_properties;
 
-    /************************************************************************
-     * Load & Save
-     ************************************************************************/
-public:
-    /** @reimp */
-    bool loadXML(QXmlStreamReader &root);
+        /************************************************************************
+         * Load & Save
+         ************************************************************************/
+    public:
+        /** @reimp */
+        bool loadXML(QXmlStreamReader & root);
 
-    /** @reimp */
-    bool saveXML(QXmlStreamWriter *doc);
+        /** @reimp */
+        bool saveXML(QXmlStreamWriter *doc);
 
-    /************************************************************************
-     * Running
-     ************************************************************************/
-public:
-    /** @reimp */
-    void tap();
+        /************************************************************************
+         * Running
+         ************************************************************************/
+    public:
+        /** @reimp */
+        void tap();
 
-    /** @reimp */
-    void preRun(MasterTimer *timer);
+        /** @reimp */
+        void preRun(MasterTimer *timer);
 
-    /** @reimp */
-    void write(MasterTimer *timer, QList<Universe*> universes);
+        /** @reimp */
+        void write(MasterTimer *timer, QList<Universe*> universes);
 
-    /** @reimp */
-    void postRun(MasterTimer *timer, QList<Universe*> universes);
+        /** @reimp */
+        void postRun(MasterTimer *timer, QList<Universe*> universes);
 
-private:
-    /** Check what should be done when elapsed() >= duration() */
-    void roundCheck();
+    private:
+        /** Check what should be done when elapsed() >= duration() */
+        void roundCheck();
 
-    FadeChannel *getFader(QList<Universe *> universes, quint32 universeID, quint32 fixtureID, quint32 channel);
-    void updateFaderValues(FadeChannel *fc, uchar value, uint fadeTime);
+        FadeChannel *getFader(QList<Universe *> universes, quint32 universeID, quint32 fixtureID, quint32 channel);
+        void updateFaderValues(FadeChannel *fc, uchar value, uint fadeTime);
 
-    /** Update FadeChannels when $map has changed since last time */
-    void updateMapChannels(const RGBMap& map, const FixtureGroup* grp, QList<Universe *> universes);
+        /** Update FadeChannels when $map has changed since last time */
+        void updateMapChannels(const RGBMap & map, const FixtureGroup* grp, QList<Universe *> universes);
 
-public:
-    /** Convert color values to fader value */
-    static uchar rgbToGrey(uint col);
+    public:
+        /** Convert color values to fader value */
+        static uchar rgbToGrey(uint col);
 
-private:
-    /** Reference to a timer counting the time in ms between steps */
-    QElapsedTimer *m_roundTime;
+    private:
+        /** Reference to a timer counting the time in ms between steps */
+        QElapsedTimer *m_roundTime;
 
-    /** The number of steps returned by the currently loaded algorithm */
-    int m_stepsCount;
+        /** The number of steps returned by the currently loaded algorithm */
+        int m_stepsCount;
 
-    /** The duration of a step based on the current BPM (Beats tempo only) */
-    uint m_stepBeatDuration;
+        /** The duration of a step based on the current BPM (Beats tempo only) */
+        uint m_stepBeatDuration;
 
-    /*********************************************************************
-     * Attributes
-     *********************************************************************/
-public:
-    /** @reimp */
-    int adjustAttribute(qreal fraction, int attributeId);
+        /*********************************************************************
+         * Attributes
+         *********************************************************************/
+    public:
+        /** @reimp */
+        int adjustAttribute(qreal fraction, int attributeId);
 
-    /*************************************************************************
-     * Blend mode
-     *************************************************************************/
-public:
-    /** @reimp */
-    void setBlendMode(Universe::BlendMode mode);
+        /*************************************************************************
+         * Blend mode
+         *************************************************************************/
+    public:
+        /** @reimp */
+        void setBlendMode(Universe::BlendMode mode);
 
-    /*************************************************************************
-     * Control Mode
-     *************************************************************************/
-public:
-    /** Control modes for the RGB Matrix */
-    enum ControlMode
-    {
-        ControlModeRgb = 0,
-        ControlModeWhite,
-        ControlModeAmber,
-        ControlModeUV,
-        ControlModeDimmer,
-        ControlModeShutter
-    };
+        /*************************************************************************
+         * Control Mode
+         *************************************************************************/
+    public:
+        /** Control modes for the RGB Matrix */
+        enum ControlMode {
+            ControlModeRgb = 0,
+            ControlModeWhite,
+            ControlModeAmber,
+            ControlModeUV,
+            ControlModeDimmer,
+            ControlModeShutter
+        };
 
-    /** Get/Set the control mode associated to this RGBMatrix */
-    ControlMode controlMode() const;
-    void setControlMode(ControlMode mode);
+        /** Get/Set the control mode associated to this RGBMatrix */
+        ControlMode controlMode() const;
+        void setControlMode(ControlMode mode);
 
-    /** Return a control mode from a string */
-    static ControlMode stringToControlMode(QString mode);
+        /** Return a control mode from a string */
+        static ControlMode stringToControlMode(QString mode);
 
-    /** Return a string from a control mode, to be saved into a XML */
-    static QString controlModeToString(ControlMode mode);
+        /** Return a string from a control mode, to be saved into a XML */
+        static QString controlModeToString(ControlMode mode);
 
-private:
-    ControlMode m_controlMode;
+    private:
+        ControlMode m_controlMode;
+
+        /*************************************************************************
+         * Master Dimmer (except for ControlModeShutter)
+         *************************************************************************/
+    public slots:
+        /** Set a source channel for master dimmer */
+        void setMasterDimmerSource(QSharedPointer<QLCInputSource> source);
+    public:
+        /** Report on the existing source channel for master dimmer */
+        QSharedPointer<QLCInputSource> getMasterDimmerSource();
+
+    private:
+        uchar getDimmed(uchar v);
+        QSharedPointer<QLCInputSource> m_masterDimSource;
+        uchar m_masterDimValue;
+    private slots:
+        void masterDimmerValueChanged(uchar value);
+
 };
 
 /** @} */
