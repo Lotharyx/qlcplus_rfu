@@ -699,7 +699,7 @@ void RGBMatrixEditor::slotControlModeChanged(int index) {
 }
 
 void RGBMatrixEditor::slotStartColorButtonClicked() {
-    QColor col = QColorDialog::getColor(m_matrix->startColor());
+    QColor col = QColorDialog::getColor(m_matrix->startColor(), nullptr, QString(), QColorDialog::DontUseNativeDialog);
 
     if (col.isValid() == true) {
         m_matrix->setStartColor(col);
@@ -709,7 +709,7 @@ void RGBMatrixEditor::slotStartColorButtonClicked() {
 }
 
 void RGBMatrixEditor::slotEndColorButtonClicked() {
-    QColor col = QColorDialog::getColor(m_matrix->endColor());
+    QColor col = QColorDialog::getColor(m_matrix->endColor(), nullptr, QString(), QColorDialog::DontUseNativeDialog);
 
     if (col.isValid() == true) {
         m_matrix->setEndColor(col);
